@@ -161,6 +161,7 @@
       font-weight: 600;
       color: var(--text-primary);
       letter-spacing: -1px;
+      white-space: nowrap;
     }
 
     .current-desc {
@@ -202,10 +203,12 @@
     .forecast-item .temp-range .high {
       color: var(--text-primary);
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .forecast-item .temp-range .low {
       color: var(--text-secondary);
+      white-space: nowrap;
     }
 
     /* Fullscreen Button */
@@ -1030,20 +1033,15 @@
     async function initWidget() {
       updateFullscreenIcon();
       
-      if (useDeviceLocation) {
-        cityNameEl.textContent = 'DETECTING LOCATION...';
-        currentDescEl.textContent = 'Finding your position...';
-        try {
-          const loc = await detectLocation();
-          currentLocation = loc;
-          updateWeather();
-        } catch (err) {
-          console.error('Failed auto-detecting location on startup, falling back:', err);
-          currentLocation = DEFAULT_LOCATION;
-          updateWeather();
-        }
-      } else {
-        currentLocation = JSON.parse(localStorage.getItem('weather_widget_location')) || DEFAULT_LOCATION;
+      cityNameEl.textContent = 'DETECTING LOCATION...';
+      currentDescEl.textContent = 'Finding your position...';
+      try {
+        const loc = await detectLocation();
+        currentLocation = loc;
+        updateWeather();
+      } catch (err) {
+        console.error('Failed auto-detecting location on startup, falling back:', err);
+        currentLocation = DEFAULT_LOCATION;
         updateWeather();
       }
     }
