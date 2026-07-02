@@ -782,34 +782,38 @@
     }
 
     async function detectLocationByIp() {
-      // Try ipapi.co primary IP geolocation API
+      // 1. Try free.freeipapi.com (CORS enabled, HTTPS, direct)
       try {
-        const res = await fetch('https://ipapi.co/json/');
-        const data = await res.json();
-        if (data.latitude && data.longitude) {
-          return {
-            name: (data.city || 'Current Location').toUpperCase(),
-            latitude: data.latitude,
-            longitude: data.longitude
-          };
+        const res = await fetch('https://free.freeipapi.com/api/json');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.latitude && data.longitude) {
+            return {
+              name: (data.cityName || 'Current Location').toUpperCase(),
+              latitude: data.latitude,
+              longitude: data.longitude
+            };
+          }
         }
       } catch (err) {
-        console.warn('Primary IP Geolocation (ipapi.co) failed, trying secondary fallback:', err);
+        console.warn('Primary IP Geolocation (freeipapi) failed, trying secondary fallback:', err);
       }
 
-      // Try freeipapi.com secondary backup IP geolocation API
+      // 2. Try ipwho.is (CORS enabled, HTTPS, direct)
       try {
-        const res = await fetch('https://freeipapi.com/api/json');
-        const data = await res.json();
-        if (data.latitude && data.longitude) {
-          return {
-            name: (data.cityName || 'Current Location').toUpperCase(),
-            latitude: data.latitude,
-            longitude: data.longitude
-          };
+        const res = await fetch('https://ipwho.is/');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.latitude && data.longitude) {
+            return {
+              name: (data.city || 'Current Location').toUpperCase(),
+              latitude: data.latitude,
+              longitude: data.longitude
+            };
+          }
         }
       } catch (err) {
-        console.error('Secondary IP Geolocation (freeipapi.com) failed:', err);
+        console.error('Secondary IP Geolocation (ipwho.is) failed:', err);
       }
 
       // Final default fallback
@@ -948,8 +952,7 @@
             longitude: city.longitude
           };
           localStorage.setItem('weather_widget_location', JSON.stringify(currentLocation));
-          localStorage.setItem('weather_widget_use_device', 'false');
-          useDeviceLocation = false;
+          localStorage.setItem('weather_widget_is_manual', 'true');
           closeSearch();
           updateWeather();
         });
@@ -968,8 +971,7 @@
         const loc = await detectLocation();
         currentLocation = loc;
         localStorage.setItem('weather_widget_location', JSON.stringify(loc));
-        localStorage.setItem('weather_widget_use_device', 'true');
-        useDeviceLocation = true;
+        localStorage.setItem('weather_widget_is_manual', 'false');
         closeSearch();
         updateWeather();
       } catch (err) {
@@ -1032,6 +1034,20 @@
     // ----------------------------------------------------
     async function initWidget() {
       updateFullscreenIcon();
+      
+      const isManual = localStorage.getItem('weather_widget_is_manual') === 'true';
+      if (isManual) {
+        try {
+          const storedLoc = JSON.parse(localStorage.getItem('weather_widget_location'));
+          if (storedLoc && storedLoc.latitude && storedLoc.longitude) {
+            currentLocation = storedLoc;
+            updateWeather();
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed parsing stored manual location:', e);
+        }
+      }
       
       cityNameEl.textContent = 'DETECTING LOCATION...';
       currentDescEl.textContent = 'Finding your position...';
