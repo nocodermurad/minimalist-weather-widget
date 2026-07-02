@@ -774,43 +774,8 @@
     // ----------------------------------------------------
     // GEOLOCATION SERVICES
     // ----------------------------------------------------
-    function detectLocation() {
-      return new Promise((resolve) => {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const lat = position.coords.latitude;
-              const lon = position.coords.longitude;
-              try {
-                // Reverse-geocode to get the city name (free, no API key required)
-                const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
-                const geoData = await geoRes.json();
-                const cityName = (geoData.city || geoData.locality || 'Current Location').toUpperCase();
-                resolve({
-                  name: cityName,
-                  latitude: lat,
-                  longitude: lon
-                });
-              } catch (e) {
-                console.warn('Reverse geocoding error, using generic name:', e);
-                resolve({
-                  name: 'CURRENT LOCATION',
-                  latitude: lat,
-                  longitude: lon
-                });
-              }
-            },
-            async (error) => {
-              console.warn("Geolocation API failed or denied, trying IP fallback:", error);
-              const ipLoc = await detectLocationByIp();
-              resolve(ipLoc);
-            },
-            { timeout: 6000 }
-          );
-        } else {
-          detectLocationByIp().then(resolve);
-        }
-      });
+    async function detectLocation() {
+      return await detectLocationByIp();
     }
 
     async function detectLocationByIp() {
